@@ -3,7 +3,7 @@
  <img width=300px height=120px src="images/postgresql-kafka.png" alt="Project logo"></a>
 </p>
 
-<h3 align="center">Magazord Data Lake (Docker)</h3>
+<h3 align="center">Data Lake (Docker)</h3>
 
 <div align="center">
 
