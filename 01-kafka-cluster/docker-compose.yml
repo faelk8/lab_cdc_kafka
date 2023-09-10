@@ -1,59 +1,14 @@
----
-version: '2'
+# https://levelup.gitconnected.com/kraft-kafka-cluster-with-docker-e79a97d19f2c
+version: '3.5'
 services:
-  zookeeper-1: 
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_SERVER_ID: 1
-      ZOOKEEPER_CLIENT_PORT: 22181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_INIT_LIMIT: 5
-      ZOOKEEPER_SYNC_LIMIT: 2
-      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
-    network_mode: host
-    extra_hosts:
-      - "moby:127.0.0.1"
-
-  zookeeper-2:
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_SERVER_ID: 2
-      ZOOKEEPER_CLIENT_PORT: 32181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_INIT_LIMIT: 5
-      ZOOKEEPER_SYNC_LIMIT: 2
-      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
-    network_mode: host
-    extra_hosts:
-      - "moby:127.0.0.1"
-
-  zookeeper-3:
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_SERVER_ID: 3
-      ZOOKEEPER_CLIENT_PORT: 42181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_INIT_LIMIT: 5
-      ZOOKEEPER_SYNC_LIMIT: 2
-      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
-    network_mode: host
-    extra_hosts:
-      - "moby:127.0.0.1"
-
-  kafka-1:
+  kafka1:
     image: confluentinc/cp-kafka:7.4.1
     container_name: kafka1
     hostname: kafka1
-    network_mode: host
     ports:
       - "9092:9092"
-    depends_on:
-      - zookeeper-1
-      - zookeeper-2
-      - zookeeper-3
     environment:
       KAFKA_NODE_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: localhost:22181,localhost:32181,localhost:42181
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
       KAFKA_LISTENERS: 'INTERNAL://kafka1:29092,CONTROLLER://kafka1:29093,EXTERNAL://0.0.0.0:9092'
@@ -67,28 +22,22 @@ services:
       CLUSTER_ID: 'ciWo7IWazngRchmPES6q5A=='
       KAFKA_LOG_DIRS: '/var/lib/kafka/data/kraft-combined-logs'
       KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
-      KAFKA_LOG_LEVEL: "warning"      
+      KAFKA_LOG_LEVEL: "warning"
     volumes:
-      - kafka1-data:/var/lib/kafka/data 
+      - kafka1-data:/var/lib/kafka/data      
 
-  kafka-2:
+  kafka2:
     image: confluentinc/cp-kafka:7.4.1
-    container_name: kafka1
+    container_name: kafka2
     hostname: kafka2
-    network_mode: host
     ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper-1
-      - zookeeper-2
-      - zookeeper-3
+      - "9093:9093"  
     environment:
       KAFKA_NODE_ID: 2
-      KAFKA_ZOOKEEPER_CONNECT: localhost:22181,localhost:32181,localhost:42181
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
-      KAFKA_LISTENERS: 'INTERNAL://kafka1:29092,CONTROLLER://kafka1:29093,EXTERNAL://0.0.0.0:9092'
-      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka1:29092,EXTERNAL://localhost:9092'
+      KAFKA_LISTENERS: 'INTERNAL://kafka2:29092,CONTROLLER://kafka2:29093,EXTERNAL://0.0.0.0:9093'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka2:29092,EXTERNAL://localhost:9093'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:29093,2@kafka2:29093,3@kafka3:29093'
       KAFKA_PROCESS_ROLES: 'broker,controller'
@@ -98,28 +47,22 @@ services:
       CLUSTER_ID: 'ciWo7IWazngRchmPES6q5A=='
       KAFKA_LOG_DIRS: '/var/lib/kafka/data/kraft-combined-logs'
       KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
-      KAFKA_LOG_LEVEL: "warning"      
+      KAFKA_LOG_LEVEL: "warning"
     volumes:
-      - kafka2-data:/var/lib/kafka/data 
+      - kafka2-data:/var/lib/kafka/data            
 
-  kafka-3:
+  kafka3:
     image: confluentinc/cp-kafka:7.4.1
-    container_name: kafka1
-    hostname: kafka1
-    network_mode: host
+    container_name: kafka3
+    hostname: kafka3
     ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper-1
-      - zookeeper-2
-      - zookeeper-3
+      - "9094:9094"
     environment:
       KAFKA_NODE_ID: 3
-      KAFKA_ZOOKEEPER_CONNECT: localhost:22181,localhost:32181,localhost:42181
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
-      KAFKA_LISTENERS: 'INTERNAL://kafka1:29092,CONTROLLER://kafka1:29093,EXTERNAL://0.0.0.0:9092'
-      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka1:29092,EXTERNAL://localhost:9092'
+      KAFKA_LISTENERS: 'INTERNAL://kafka3:29092,CONTROLLER://kafka3:29093,EXTERNAL://0.0.0.0:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka3:29092,EXTERNAL://localhost:9094'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:29093,2@kafka2:29093,3@kafka3:29093'
       KAFKA_PROCESS_ROLES: 'broker,controller'
@@ -129,51 +72,11 @@ services:
       CLUSTER_ID: 'ciWo7IWazngRchmPES6q5A=='
       KAFKA_LOG_DIRS: '/var/lib/kafka/data/kraft-combined-logs'
       KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
-      KAFKA_LOG_LEVEL: "warning"      
+      KAFKA_LOG_LEVEL: "warning"
     volumes:
-      - kafka3-data:/var/lib/kafka/data 
-  
-  # kafka-3:
-  #   image: confluentinc/cp-kafka:7.4.1
-  #   network_mode: host
-  #   depends_on:
-  #     - zookeeper-1
-  #     - zookeeper-2
-  #     - zookeeper-3
-  #   environment:
-  #     KAFKA_BROKER_ID: 3
-  #     KAFKA_ZOOKEEPER_CONNECT: localhost:22181,localhost:32181,localhost:42181
-  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:39092
-  #   extra_hosts:
-  #     - "moby:127.0.0.1"
-
-  redpanda-console:
-      image: docker.redpanda.com/redpandadata/console:v2.2.5
-      entrypoint: /bin/sh
-      command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"  
-      environment:
-        CONFIG_FILEPATH: /tmp/config.yml
-        CONSOLE_CONFIG_FILE: |
-          kafka:
-            brokers: ["kafka1:29092","kafka2:29092","kafka3:29092"]
-            schemaRegistry:
-              enabled: true
-              urls: ["http://schema-registry:8081"]       
-          connect:
-            enabled: true
-            clusters:
-              - name: docker-connect-cluster                                    
-                url: "http://debezium:8083"        
-      ports:
-        - 8080:8080
-      depends_on:        
-        schema-registry:    
-          condition: service_healthy        
-        debezium:    
-          condition: service_healthy          
-
+      - kafka3-data:/var/lib/kafka/data            
 
 volumes:
   kafka1-data:
   kafka2-data:
-  kafka3-data:       
+  kafka3-data:      
