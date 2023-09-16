@@ -138,7 +138,6 @@ services:
       schema-registry:    
         condition: service_healthy    
 
-
   redpanda-console:
       image: docker.redpanda.com/redpandadata/console:v2.2.5
       entrypoint: /bin/sh
