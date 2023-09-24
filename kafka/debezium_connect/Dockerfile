@@ -30,11 +30,6 @@ RUN docker-maven-download debezium mongodb "$DEBEZIUM_VERSION" "$MONGODB_MD5" &&
     docker-maven-download debezium-optional connect-rest-extension "$DEBEZIUM_VERSION" "$KCRESTEXT_MD5" && \
     docker-maven-download debezium-optional scripting "$DEBEZIUM_VERSION" "$SCRIPTING_MD5"
 
-RUN curl -L -o kafka-connect-iceberg-sink-0.4.0-plugin.zip https://github.com/getindata/kafka-connect-iceberg-sink/releases/download/0.4.0/kafka-connect-iceberg-sink-0.4.0-plugin.zip && \
-    unzip kafka-connect-iceberg-sink-0.4.0-plugin.zip -d connectors && \
-    rm kafka-connect-iceberg-sink-0.4.0-plugin.zip
-
-
 ADD connectors/confluentinc-kafka-connect-s3-10.5.1/ /kafka/connect/confluentinc-kafka-connect-s3-10.5.1/
 ADD connectors/kafka-connect-iceberg-sink/ /kafka/connect/kafka-connect-iceberg-sink/
 COPY libs/ /kafka/libs/

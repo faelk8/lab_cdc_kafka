@@ -1,16 +1,16 @@
 {
-    "name": "agromania_2023_02_17",
+    "name": "nome",
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
     "transforms": "topic_routing",
     "transforms.topic_routing.type": "org.apache.kafka.connect.transforms.RegexRouter",
     "transforms.topic_routing.regex": ".*\\.(.*)",
     "transforms.topic_routing.replacement": "$1",
-    "topic.prefix": "agromania_2023_02_17",
-    "database.hostname": "172.31.80.250",
+    "topic.prefix": "nome",
+    "database.hostname": "************",
     "database.user": "postgres",
     "database.password": "postgrespassword",
-    "database.dbname": "agromania_2023_02_17",
+    "database.dbname": "nome",
     "plugin.name": "pgoutput",
-    "table.include.list": "public.mz_pedido, public.mz_pedido_item, public.mz_pedido_rastreio",
+    "table.include.list": "tabela",
     "schema.include.list": "public"
 }

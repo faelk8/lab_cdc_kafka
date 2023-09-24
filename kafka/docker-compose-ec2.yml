@@ -1,0 +1,55 @@
+# https://levelup.gitconnected.com/kraft-kafka-cluster-with-docker-e79a97d19f2c
+version: '3.5'
+services:
+  kafka1:
+    image: confluentinc/cp-kafka:7.4.1
+    container_name: kafka1
+    hostname: kafka1
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+      - "29093:29093"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_LISTENERS: 'INTERNAL://kafka1:29092,CONTROLLER://kafka1:29093,EXTERNAL://0.0.0.0:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://10.1.29.176:29092,EXTERNAL://10.1.29.176:9092' # ip da maquina 10.1.29.176
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '4@10.1.29.176:29093' # ip da maquina 10.1.29.176
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_LISTENERS_NAMES: 'CONTROLLER'
+      KAKFA_NUM_PARTITIONS: 6
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid"
+      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
+      CLUSTER_ID: 'ciWo7IWazngRchmPES6q5A=='
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data/kraft-combined-logs'
+      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
+      KAFKA_LOG_LEVEL: "warning"
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+
+  # schema-registry:
+  #   image: confluentinc/cp-schema-registry:7.4.1
+  #   container_name: schema-registry
+  #   hostname: schema-registry
+  #   ports:
+  #     - "8081:8081"  
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8081"]
+  #     interval: 1s # produção 0
+  #     timeout: 1s # produção 0
+  #     retries: 10      
+  #   environment:
+  #     SCHEMA_REGISTRY_HOST_NAME: schema-registry
+  #     SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka1:29092'
+  #     SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+  #     SCHEMA_REGISTRY_LOG_LEVEL: "warning"
+  #   depends_on:
+  #     - kafka1
+
+volumes:
+  kafka1-data:

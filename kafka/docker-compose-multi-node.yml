@@ -163,39 +163,6 @@ services:
         debezium:    
           condition: service_healthy          
 
-  # kafka-ui:
-  #     image: provectuslabs/kafka-ui:latest
-  #     restart: always
-  #     container_name: kafka-ui    
-  #     ports:
-  #       - "8082:8080"
-  #     environment:
-  #       KAFKA_CLUSTERS_0_NAME: "Kafka Cluster"
-  #       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka1:29092,kafka2:29092,kafka3:29092'
-  #       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
-  #       KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: first
-  #       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://debezium:8083
-  #       DYNAMIC_CONFIG_ENABLED: 'true'
-  #     depends_on:        
-  #       schema-registry:    
-  #         condition: service_healthy
-  #       debezium:    
-  #         condition: service_healthy                
-
-  # debezium-ui:
-  #     image: debezium/debezium-ui:2.4
-  #     restart: always
-  #     container_name: debezium-ui
-  #     hostname: debezium-ui
-  #     depends_on:
-  #       debezium:
-  #         condition: service_healthy
-  #     ports:
-  #       - '8085:8080'
-  #     environment:
-  #       KAFKA_CONNECT_URIS: http://debezium:8083
-
-
 volumes:
   kafka1-data:
   kafka2-data:
