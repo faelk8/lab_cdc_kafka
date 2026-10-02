@@ -1,0 +1,161 @@
+name: kafka-estudo
+x-app: &app
+  build: ./app
+  image: kafka-estudo-python
+  environment: &env
+    SOURCE_DSN: postgresql://estudo:estudo@postgres:5432/loja
+    TARGET_DSN: postgresql://estudo:estudo@postgres-destino:5432/loja
+    KAFKA_BOOTSTRAP: kafka:19092,kafka2:19092
+    CONNECT_URL: http://connect:8083
+    CONSOLE_URL: http://redpanda-console:8080
+    S3_ENDPOINT: http://minio:9000
+    AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-estudo}
+    AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-estudo-minio-local}
+    AWS_DEFAULT_REGION: us-east-1
+    S3_BUCKET: ${S3_BUCKET:-cdc-loja}
+    ORDERS: ${ORDERS:-10000}
+  init: true
+services:
+  postgres:
+    image: postgres:17.6-bookworm
+    command: [postgres, -c, wal_level=logical, -c, max_replication_slots=10, -c, max_wal_senders=10]
+    environment: &pg
+      POSTGRES_USER: estudo
+      POSTGRES_PASSWORD: estudo
+      POSTGRES_DB: loja
+    ports: ["127.0.0.1:${POSTGRES_PORT:-15433}:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql/data", "./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro"]
+    healthcheck: &pghealth
+      test: [CMD-SHELL, "pg_isready -U estudo -d loja"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  postgres-destino:
+    image: postgres:17.6-bookworm
+    environment: *pg
+    ports: ["127.0.0.1:${TARGET_POSTGRES_PORT:-5434}:5432"]
+    volumes: ["target-data:/var/lib/postgresql/data", "./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro"]
+    healthcheck: *pghealth
+  kafka:
+    image: apache/kafka:3.9.1
+    ports: ["127.0.0.1:${KAFKA_PORT:-9092}:9092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:19092,EXTERNAL://:9092,CONTROLLER://:19093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://localhost:${KAFKA_PORT:-9092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:19093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes: ["kafka-data:/var/lib/kafka/data"]
+    healthcheck:
+      test: [CMD-SHELL, "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:19092 --list >/dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+  kafka2:
+    image: apache/kafka:3.9.1
+    ports: ["127.0.0.1:${KAFKA2_PORT:-9093}:9092"]
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker
+      KAFKA_LISTENERS: INTERNAL://:19092,EXTERNAL://:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:19092,EXTERNAL://localhost:${KAFKA2_PORT:-9093}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:19093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes: ["kafka2-data:/var/lib/kafka/data"]
+    healthcheck:
+      test: [CMD-SHELL, "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v3.12.0
+    environment:
+      CONFIG_FILEPATH: /etc/console/config.yaml
+    volumes: ["./connectors/docker/console/config.yaml:/etc/console/config.yaml:ro"]
+    ports: ["127.0.0.1:${CONSOLE_PORT:-8080}:8080"]
+    depends_on:
+      kafka: {condition: service_healthy}
+      kafka2: {condition: service_healthy}
+      connect: {condition: service_healthy}
+  connect:
+    build: ./connectors/docker/connect
+    ports: ["127.0.0.1:${CONNECT_PORT:-8083}:8083"]
+    environment:
+      BOOTSTRAP_SERVERS: kafka:19092,kafka2:19092
+      GROUP_ID: estudo-connect
+      CONFIG_STORAGE_TOPIC: connect-configs
+      OFFSET_STORAGE_TOPIC: connect-offsets
+      STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 2
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: 'true'
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: 'true'
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 5000
+      CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: All
+      AWS_REGION: us-east-1
+    depends_on:
+      kafka: {condition: service_healthy}
+      kafka2: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8083/connectors]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+  minio:
+    build: ./connectors/docker/minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-estudo}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-estudo-minio-local}
+    ports: ["127.0.0.1:${MINIO_PORT:-19000}:9000", "127.0.0.1:${MINIO_CONSOLE_PORT:-19001}:9001"]
+    volumes: ["minio-data:/data"]
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:9000/minio/health/live]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+  kafka-replicate:
+    image: apache/kafka:3.9.1
+    entrypoint: [/bin/sh, /scripts/replicate.sh]
+    volumes: ["./connectors/docker/kafka/replicate.sh:/scripts/replicate.sh:ro"]
+    depends_on:
+      kafka: {condition: service_healthy}
+      kafka2: {condition: service_healthy}
+      connect: {condition: service_healthy}
+  tools:
+    <<: *app
+    profiles: [tools]
+    volumes: ["./connectors:/config:ro"]
+    command: [python, -c, "print('Execute connect_debezium.py, connect_s3.py, connect_iceberg.py, connect_postgres.py, seed.py ou verify.py explicitamente.')"]
+volumes:
+  postgres-data:
+  target-data:
+  kafka-data:
+  kafka2-data:
+  minio-data:

@@ -1,0 +1,32 @@
+{
+  "name": "loja-source",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "topic.creation.default.replication.factor": "2",
+    "topic.creation.default.partitions": "1",
+    "tasks.max": "1",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "estudo",
+    "database.password": "estudo",
+    "database.dbname": "loja",
+    "topic.prefix": "loja_v2",
+    "plugin.name": "pgoutput",
+    "slot.name": "loja_cdc_v2",
+    "publication.name": "loja_publication",
+    "publication.autocreate.mode": "filtered",
+    "table.include.list": "public.cliente,public.produto,public.pedido,public.item_pedido,public.pagamento",
+    "snapshot.mode": "initial",
+    "decimal.handling.mode": "string",
+    "tombstones.on.delete": "false",
+    "heartbeat.interval.ms": "5000",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "true",
+    "value.converter.schemas.enable": "true",
+    "transforms": "route",
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": "loja_v2\\.public\\.(.*)",
+    "transforms.route.replacement": "$1"
+  }
+}

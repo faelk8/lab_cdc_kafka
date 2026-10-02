@@ -1,0 +1,18 @@
+{
+  "name": "postgres-sink",
+  "config": {
+    "connector.class": "br.com.estudo.connect.CdcSinkConnector",
+    "tasks.max": "1",
+    "topics": "cliente,produto,pedido,item_pedido,pagamento",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "true",
+    "value.converter.schemas.enable": "true",
+    "consumer.override.auto.offset.reset": "earliest",
+    "consumer.override.max.poll.records": "1000",
+    "destination.type": "postgres",
+    "connection.url": "jdbc:postgresql://postgres-destino:5432/loja",
+    "connection.user": "estudo",
+    "connection.password": "estudo"
+  }
+}

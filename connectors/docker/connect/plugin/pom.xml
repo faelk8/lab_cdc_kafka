@@ -1,0 +1,22 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>br.com.estudo</groupId><artifactId>cdc-connect-sinks</artifactId><version>1.0.0</version>
+  <properties><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><iceberg.version>1.9.2</iceberg.version></properties>
+  <dependencies>
+    <dependency><groupId>org.apache.kafka</groupId><artifactId>connect-api</artifactId><version>3.9.1</version><scope>provided</scope></dependency>
+    <dependency><groupId>org.apache.iceberg</groupId><artifactId>iceberg-core</artifactId><version>${iceberg.version}</version></dependency>
+    <dependency><groupId>org.apache.iceberg</groupId><artifactId>iceberg-data</artifactId><version>${iceberg.version}</version></dependency>
+    <dependency><groupId>org.apache.iceberg</groupId><artifactId>iceberg-parquet</artifactId><version>${iceberg.version}</version></dependency>
+    <dependency><groupId>org.apache.iceberg</groupId><artifactId>iceberg-aws</artifactId><version>${iceberg.version}</version></dependency>
+    <dependency><groupId>org.apache.iceberg</groupId><artifactId>iceberg-aws-bundle</artifactId><version>${iceberg.version}</version></dependency>
+    <dependency><groupId>org.apache.parquet</groupId><artifactId>parquet-avro</artifactId><version>1.15.2</version></dependency>
+    <dependency><groupId>org.apache.hadoop</groupId><artifactId>hadoop-common</artifactId><version>3.4.1</version></dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.7.8</version></dependency>
+    <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>2.19.2</version></dependency>
+    <dependency><groupId>org.apache.hadoop</groupId><artifactId>hadoop-mapreduce-client-core</artifactId><version>3.4.1</version></dependency>
+  </dependencies>
+  <build><plugins>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.0</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.8.1</version><executions><execution><id>runtime</id><phase>package</phase><goals><goal>copy-dependencies</goal></goals><configuration><includeScope>runtime</includeScope><outputDirectory>${project.build.directory}/plugin</outputDirectory></configuration></execution></executions></plugin>
+  </plugins></build>
+</project>

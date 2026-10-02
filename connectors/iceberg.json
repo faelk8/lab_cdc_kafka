@@ -1,0 +1,26 @@
+{
+  "name": "iceberg-sink",
+  "config": {
+    "connector.class": "br.com.estudo.connect.CdcSinkConnector",
+    "tasks.max": "1",
+    "topics": "cliente,produto,pedido,item_pedido,pagamento",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "true",
+    "value.converter.schemas.enable": "true",
+    "consumer.override.auto.offset.reset": "earliest",
+    "consumer.override.max.poll.records": "1000",
+    "s3.endpoint": "http://minio:9000",
+    "s3.bucket": "cdc-loja",
+    "s3.access-key-id": "estudo",
+    "s3.secret-access-key": "estudo-minio-local",
+    "s3.region": "us-east-1",
+    "destination.type": "iceberg",
+    "catalog.name": "loja-connect",
+    "catalog.uri": "jdbc:postgresql://postgres-destino:5432/loja",
+    "catalog.user": "estudo",
+    "catalog.password": "estudo",
+    "catalog.warehouse": "s3://cdc-loja/iceberg-native",
+    "catalog.namespace": "cdc"
+  }
+}
