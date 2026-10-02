@@ -1,0 +1,63 @@
+# LABORATÓRIO CDC — REFERÊNCIA RÁPIDA
+# Documentação: README.md e docs/OPERACAO.md
+# Execute na raiz do projeto. Conexões e carga são manuais.
+
+# 1. INFRAESTRUTURA
+# Primeiro plano; use outro terminal para as próximas etapas:
+docker compose up
+# Alternativa em segundo plano (escolha um dos modos):
+# docker compose up -d
+docker compose ps -a
+
+# 2. ORIGEM E CARGA
+docker compose run --rm tools python connect_debezium.py
+docker compose run --rm tools python seed.py
+
+# 3. SINKS INDEPENDENTES — ATIVE SOMENTE OS DESEJADOS
+# S3: parquet-native/<tabela>/ano/mes/dia.parquet
+docker compose run --rm tools python connect_s3.py
+# Iceberg: histórico CDC, namespace cdc
+docker compose run --rm tools python connect_iceberg.py
+# PostgreSQL: estado atual nas cinco tabelas public, iguais à origem
+docker compose run --rm tools python connect_postgres.py
+
+# 4. ALTERAÇÕES E VALIDAÇÃO
+# Verificação padrão exige os três sinks:
+docker compose run --rm tools python mutate.py
+docker compose run --rm tools python verify.py --require-operations c,u,d
+# Alternativas para verificar apenas os destinos selecionados:
+# docker compose run --rm tools python verify.py --destinations s3,iceberg
+# docker compose run --rm tools python verify.py --destinations postgres
+# Consulta somente depois de registrar Iceberg e receber dados:
+docker compose run --rm tools python query_iceberg.py pedido --limit 5
+
+# 5. MONITORAMENTO
+# Redpanda Console: http://localhost:8080
+# MinIO Console: http://localhost:19001
+curl -fsS 'http://localhost:8083/connectors?expand=status'
+docker compose logs --tail 100 connect
+docker compose exec connect rpk topic list -X brokers=kafka:19092,kafka2:19092
+docker compose exec connect rpk group describe connect-s3-parquet-sink connect-iceberg-sink connect-postgres-sink -X brokers=kafka:19092,kafka2:19092
+
+# 6. DBEAVER — POSTGRESQL
+# Origem: localhost:15433, banco loja, usuário estudo, senha estudo
+# Destino: localhost:5434, banco loja, usuário estudo, senha estudo
+# Tabelas relacionais: public.cliente, public.produto, public.pedido,
+# public.item_pedido, public.pagamento
+
+# 7. PAUSAR/RETOMAR UM CONECTOR
+curl -fsS -X PUT http://localhost:8083/connectors/iceberg-sink/pause
+curl -fsS -X PUT http://localhost:8083/connectors/iceberg-sink/resume
+
+# 8. MANUTENÇÃO — EXECUTE CONFORME A NECESSIDADE
+# Reconstruir imagens após alterações de código/Dockerfile:
+# docker compose build connect tools
+# docker compose up
+# Corrigir fator de replicação de tópicos existentes:
+# docker compose run --rm kafka-replicate
+# Remover um registro (não apaga dados/tópicos nem necessariamente offsets):
+# curl -fsS -X DELETE http://localhost:8083/connectors/iceberg-sink
+# Encerrar preservando volumes:
+# docker compose down
+# DESTRUTIVO: descartar todos os volumes do projeto:
+# docker compose down -v
